@@ -50,6 +50,12 @@
         </dependency>
 
         <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.4</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.phoebus</groupId>
             <artifactId>app-display-model</artifactId>
             <version>5.0.5</version>
@@ -80,6 +86,9 @@
                             <includes>
                                 <include>eu.hansolo:*</include>
                                 <include>eu.hansolo.fx:*</include>
+                                <include>commons-beanutils:commons-beanutils</include>
+                                <include>commons-logging:commons-logging</include>
+                                <include>commons-collections:commons-collections</include>
                             </includes>
                         </artifactSet>
                         <transformers>

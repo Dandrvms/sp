@@ -15,6 +15,7 @@ public class SparkLine extends StackPane {
     private AnimationTimer timer;
     private static final Random RND = new Random();
     private Tile sparkLineTile;
+    private int pollingRate = 2_000_000_000;
 
 
     public SparkLine() {
@@ -39,7 +40,7 @@ public class SparkLine extends StackPane {
         timer = new AnimationTimer() {
             @Override
             public void handle(final long now) {
-                if (now > lastTimerCall + 2_000_000_000) {
+                if (now > lastTimerCall + pollingRate) {
 
                     sparkLineTile.setValue(RND.nextDouble() * sparkLineTile.getRange() + sparkLineTile.getMinValue());
 
@@ -51,11 +52,25 @@ public class SparkLine extends StackPane {
         };
 
 
-        timer.start();
+
 
         this.getChildren().add(sparkLineTile);
 
     }
 
+
+    public void startTimer(Boolean enabled){
+        if(enabled) timer.start();
+        else timer.stop();
+    }
+
+    public void setPolling(int val){
+        if(val < 1_000_000_000) return;
+        pollingRate = val;
+    }
+
+    public Tile getTile() {
+        return sparkLineTile;
+    }
 
 }

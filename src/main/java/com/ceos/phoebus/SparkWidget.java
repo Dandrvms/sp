@@ -1,6 +1,7 @@
 package com.ceos.phoebus;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ public class SparkWidget extends PVWidget {
     public static final String WIDGET_TYPE = "spark_line";
 
     private Map<String, WidgetProperty<?>> tilePropertyMap;
+    private Map<String, Method> tileSetters;
     private WidgetProperty<Boolean> timer;
     private WidgetProperty<Integer> polling;
 
@@ -34,8 +36,20 @@ public class SparkWidget extends PVWidget {
         return timer;
     }
 
-    public WidgetProperty<Integer> propPolling(){
-        return polling;
+//    public WidgetProperty<Integer> propPolling(){
+//        return polling;
+//    }
+
+    public Map<String, Method> getTileSetters() {
+        if (tileSetters == null) {
+            tileSetters = new LinkedHashMap<>();
+        }
+        return tileSetters;
+    }
+
+    public Method getTileSetter(String propName) {
+        if (tileSetters == null) return null;
+        return tileSetters.get(propName);
     }
 
     @Override
@@ -43,11 +57,14 @@ public class SparkWidget extends PVWidget {
         super.defineProperties(properties);
 
         properties.add(timer = CommonWidgetProperties.propEnabled.createProperty(this, false));
-        properties.add(polling = CommonWidgetProperties.newIntegerPropertyDescriptor(WidgetPropertyCategory.MISC, "polling", "polling rate")
-                .createProperty(this, 1_000_000_000));
+//        properties.add(polling = CommonWidgetProperties.newIntegerPropertyDescriptor(WidgetPropertyCategory.MISC, "polling", "polling rate")
+//                .createProperty(this, 1_000_000_000));
 
         if (tilePropertyMap == null) {
             tilePropertyMap = new LinkedHashMap<>();
+        }
+        if (tileSetters == null) {
+            tileSetters = new LinkedHashMap<>();
         }
 
         try {
@@ -66,7 +83,11 @@ public class SparkWidget extends PVWidget {
                 boolean alreadyDefined = properties.stream().anyMatch(p -> p.getName().equals(name));
                 if (alreadyDefined) continue;
 
-                WidgetProperty<?> prop = createTileProperty(name, type);
+                // Cache the setter method for direct invocation
+                tileSetters.put(name, pd.getWriteMethod());
+
+                WidgetProperty<?> prop = null;
+                if(!"skinType".equals(name))  prop = createTileProperty(name, type);
                 if (prop != null) {
                     properties.add(prop);
                     tilePropertyMap.put(name, prop);

@@ -1,8 +1,7 @@
 package com.ceos.phoebus;
 
+import java.lang.reflect.Method;
 import java.util.Map;
-
-import org.apache.commons.beanutils.PropertyUtils;
 
 import com.ceos.sparkline.SparkLine;
 
@@ -14,11 +13,11 @@ import org.csstudio.display.builder.representation.javafx.widgets.JFXBaseReprese
 import org.phoebus.ui.color.WidgetColor;
 
 import eu.hansolo.tilesfx.Tile;
-import javafx.scene.paint.Color;
 
 public class SparkRepresentation extends JFXBaseRepresentation<SparkLine, SparkWidget> {
     private DirtyFlag dirtyLook = new DirtyFlag();
     private Tile tile;
+    private boolean initialTilePropsApplied = false;
 
     private final UntypedWidgetPropertyListener contentChangedListener = this::contentChanged;
 
@@ -36,10 +35,9 @@ public class SparkRepresentation extends JFXBaseRepresentation<SparkLine, SparkW
         model_widget.propWidth().addUntypedPropertyListener(contentChangedListener);
         model_widget.propHeight().addUntypedPropertyListener(contentChangedListener);
         model_widget.propTimer().addUntypedPropertyListener(contentChangedListener);
-        model_widget.propPolling().addUntypedPropertyListener(contentChangedListener);
 
         for (WidgetProperty<?> prop : model_widget.getTilePropertyMap().values()) {
-            prop.addUntypedPropertyListener(contentChangedListener);
+            prop.addUntypedPropertyListener(this::tilePropertyChanged);
         }
     }
 
@@ -54,36 +52,57 @@ public class SparkRepresentation extends JFXBaseRepresentation<SparkLine, SparkW
         jfx_node.setPrefWidth(width);
         jfx_node.setPrefHeight(height);
         jfx_node.startTimer(model_widget.propTimer().getValue());
-        jfx_node.setPolling(model_widget.propPolling().getValue());
 
+        if (!initialTilePropsApplied) {
+            applyAllTileProperties();
+            initialTilePropsApplied = true;
+        }
+    }
+
+    private void applyAllTileProperties() {
         for (Map.Entry<String, WidgetProperty<?>> entry : model_widget.getTilePropertyMap().entrySet()) {
             String propName = entry.getKey();
             if ("skinType".equals(propName)) continue;
             WidgetProperty<?> prop = entry.getValue();
-            Object value = prop.getValue();
+            applyTileProperty(propName, prop.getValue());
+        }
 
-            Object tileValue = value;
-            if (value instanceof WidgetColor wc) {
-                tileValue = JFXUtil.convert(wc);
-            }
+        WidgetProperty<?> skinTypeProp = model_widget.getTilePropertyMap().get("skinType");
+        if (skinTypeProp != null) {
+            applyTileProperty("skinType", skinTypeProp.getValue());
+        }
 
+        tile.requestLayout();
+    }
+
+    private void applyTileProperty(String propName, Object value) {
+        Object tileValue = value;
+        if (value instanceof WidgetColor wc) {
+            tileValue = JFXUtil.convert(wc);
+        }
+
+        Method setter = model_widget.getTileSetter(propName);
+        if (setter != null) {
             try {
-                PropertyUtils.setProperty(tile, propName, tileValue);
+                setter.invoke(tile, tileValue);
             } catch (Exception e) {
                 System.err.println("Error setting tile property '" + propName + "': " + e.getMessage());
                 e.printStackTrace();
             }
         }
+    }
 
-        WidgetProperty<?> skinTypeProp = model_widget.getTilePropertyMap().get("skinType");
-        if (skinTypeProp != null) {
-            try {
-                PropertyUtils.setProperty(tile, "skinType", skinTypeProp.getValue());
-            } catch (Exception e) {
-                System.err.println("Error setting tile property 'skinType': " + e.getMessage());
-                e.printStackTrace();
-            }
+    private void tilePropertyChanged(final WidgetProperty<?> prop, final Object old, Object val) {
+        String propName = prop.getName();
+
+        // skinType recreates the skin; re-apply all properties
+        if ("skinType".equals(propName)) {
+            applyAllTileProperties();
+            return;
         }
+
+        applyTileProperty(propName, val);
+        tile.requestLayout();
     }
 
     private void contentChanged(final WidgetProperty<?> prop, final Object old, Object val) {

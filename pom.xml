@@ -60,12 +60,32 @@
             <artifactId>app-display-model</artifactId>
             <version>5.0.5</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.epics</groupId>
+                    <artifactId>pbrawclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.phoebus</groupId>
+                    <artifactId>install-jars</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.phoebus</groupId>
             <artifactId>app-display-representation-javafx</artifactId>
             <version>5.0.5</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.epics</groupId>
+                    <artifactId>pbrawclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.phoebus</groupId>
+                    <artifactId>install-jars</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>
